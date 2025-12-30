@@ -1,0 +1,1 @@
+# ThyroCare-AI
