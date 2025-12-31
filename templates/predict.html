@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block title %}Predict | ThyroCare-AI{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-lg-11 col-xl-10">
+
+      <div class="card shadow-lg border-0 rounded-4 p-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+          <div>
+            <h2 class="mb-1">Thyroid Prediction</h2>
+            <p class="text-muted mb-0 small">
+              Fill demographic/history info and clinical lab values, then click <b>Predict</b>.
+            </p>
+          </div>
+          <div class="text-end">
+            <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill">
+              Logged in as: {{ user["username"] if user else "" }}
+            </span>
+          </div>
+        </div>
+
+        <hr class="my-4">
+
+        <div id="alertBox" class="alert d-none" role="alert"></div>
+
+        {# ----------------------------------------------------
+           Ensure T3 exists (to match scaler expecting 26)
+        ----------------------------------------------------- #}
+        {% set features = feature_names[:] %}
+        {% if "T3" not in features %}
+          {% if "T3 measured" in features %}
+            {% set insert_at = features.index("T3 measured") + 1 %}
+            {% set _ = features.insert(insert_at, "T3") %}
+          {% else %}
+            {% set _ = features.append("T3") %}
+          {% endif %}
+        {% endif %}
+
+        {# ----------------------------------------------------
+           Split into: Demographic/History vs Clinical/Labs
+           - Demographic/history: age, sex, meds, conditions, etc.
+           - Clinical: measured flags + numeric lab values
+        ----------------------------------------------------- #}
+        {% set demo_features = [] %}
+        {% set clinical_features = [] %}
+
+        {% for feat in features %}
+          {% set f = feat|lower %}
+          {% if ("tsh" in f) or ("t3" in f) or ("tt4" in f) or ("t4u" in f) or ("fti" in f) or ("measured" in f) %}
+            {% set _ = clinical_features.append(feat) %}
+          {% else %}
+            {% set _ = demo_features.append(feat) %}
+          {% endif %}
+        {% endfor %}
+
+        <form id="predictForm" class="needs-validation" novalidate>
+
+          <!-- =======================
+               Section 1: Demographic / Medical History
+               ======================= -->
+          <div class="mb-3">
+            <h4 class="mb-2">Demographic & Medical History</h4>
+            <p class="text-muted small mb-0">
+              These inputs describe background and clinical history (Yes/No).
+            </p>
+          </div>
+
+          <div class="row g-3 mb-4">
+            {% for feat in demo_features %}
+              {% set feat_id = "demo_" ~ loop.index0 %}
+              {% set f = feat|lower %}
+
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold" for="{{ feat_id }}">{{ feat }}</label>
+
+                {% if f == "age" %}
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    class="form-control"
+                    id="{{ feat_id }}"
+                    data-feature="{{ feat }}"
+                    placeholder="Enter age"
+                    required
+                  />
+                  <div class="invalid-feedback">Please enter a valid age.</div>
+
+                {% elif f == "sex" %}
+                  {# Sex as Male/Female, values still numeric for model #}
+                  <select class="form-select" id="{{ feat_id }}" data-feature="{{ feat }}" required>
+                    <option value="" selected disabled>Select...</option>
+                    <option value="0">Female</option>
+                    <option value="1">Male</option>
+                  </select>
+                  <div class="invalid-feedback">Please select sex.</div>
+
+                {% else %}
+                  {# All other demographic/history flags as Yes/No #}
+                  <select class="form-select" id="{{ feat_id }}" data-feature="{{ feat }}" required>
+                    <option value="" selected disabled>Select...</option>
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                  </select>
+                  <div class="invalid-feedback">Please select Yes/No.</div>
+                {% endif %}
+
+                <div class="form-text small text-muted">
+                  Feature key: <b>{{ feat }}</b>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <hr class="my-4">
+
+          <!-- =======================
+               Section 2: Clinical / Lab Values
+               ======================= -->
+          <div class="mb-3">
+            <h4 class="mb-2">Clinical Lab Values</h4>
+            <p class="text-muted small mb-0">
+              Enter thyroid lab measurements (numeric). “Measured” fields are Yes/No flags.
+            </p>
+          </div>
+
+          <div class="row g-3">
+            {% for feat in clinical_features %}
+              {% set feat_id = "clin_" ~ loop.index0 %}
+              {% set f = feat|lower %}
+
+              <div class="col-12 col-md-6">
+                <label class="form-label fw-semibold" for="{{ feat_id }}">{{ feat }}</label>
+
+                {% if "measured" in f %}
+                  <select class="form-select" id="{{ feat_id }}" data-feature="{{ feat }}" required>
+                    <option value="" selected disabled>Select...</option>
+                    <option value="0">No</option>
+                    <option value="1">Yes</option>
+                  </select>
+                  <div class="invalid-feedback">Please select Yes/No.</div>
+                {% else %}
+                  <input
+                    type="number"
+                    step="any"
+                    class="form-control"
+                    id="{{ feat_id }}"
+                    data-feature="{{ feat }}"
+                    placeholder="Enter {{ feat }}"
+                    required
+                  />
+                  <div class="invalid-feedback">Please enter a valid number.</div>
+                {% endif %}
+
+                <div class="form-text small text-muted">
+                  Feature key: <b>{{ feat }}</b>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+
+          <!-- Buttons -->
+          <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mt-4">
+            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary rounded-pill px-4">
+              ← Back
+            </a>
+
+            <div class="d-flex gap-2">
+              <button type="button" id="fillDemoBtn" class="btn btn-outline-primary rounded-pill px-4">
+                Fill Demo
+              </button>
+              <button type="submit" id="predictBtn" class="btn btn-primary rounded-pill px-4">
+                Predict
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div id="loadingBox" class="d-none">
+              <div class="d-flex align-items-center gap-2">
+                <div class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></div>
+                <span class="small text-muted">Predicting… please wait</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-warning mt-4 small">
+            <b>Disclaimer:</b> Educational tool only. Always consult a qualified physician.
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const FEATURE_NAMES = {{ features|tojson }};
+  const form = document.getElementById("predictForm");
+  const predictBtn = document.getElementById("predictBtn");
+  const fillDemoBtn = document.getElementById("fillDemoBtn");
+  const alertBox = document.getElementById("alertBox");
+  const loadingBox = document.getElementById("loadingBox");
+
+  const featureInputs = {};
+  document.querySelectorAll("[data-feature]").forEach((el) => {
+    featureInputs[el.dataset.feature] = el;
+  });
+
+  function getInputForFeature(feat) {
+    return featureInputs[feat] || null;
+  }
+
+  function showAlert(message, type="danger") {
+    alertBox.classList.remove("d-none", "alert-danger", "alert-success", "alert-warning", "alert-info");
+    alertBox.classList.add("alert-" + type);
+    alertBox.innerHTML = message;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function hideAlert() {
+    alertBox.classList.add("d-none");
+    alertBox.innerHTML = "";
+  }
+
+  function setLoading(isLoading) {
+    if (isLoading) {
+      loadingBox.classList.remove("d-none");
+      predictBtn.disabled = true;
+      fillDemoBtn.disabled = true;
+      predictBtn.innerText = "Predicting...";
+    } else {
+      loadingBox.classList.add("d-none");
+      predictBtn.disabled = false;
+      fillDemoBtn.disabled = false;
+      predictBtn.innerText = "Predict";
+    }
+  }
+
+  // Fill demo values (safe defaults)
+  fillDemoBtn.addEventListener("click", () => {
+    hideAlert();
+
+    FEATURE_NAMES.forEach((feat) => {
+      const el = getInputForFeature(feat);
+      if (!el) return;
+
+      if (el.tagName.toLowerCase() === "select") {
+        // default: No
+        el.value = "0";
+      } else {
+        el.value = "1";
+      }
+    });
+
+    // Better demo labs
+    const demo = {
+      "age": 30,
+      "sex": 1,                  // 1=Male, 0=Female (adjust if your training used opposite)
+      "TSH measured": 1,
+      "TSH": 2.0,
+      "T3 measured": 1,
+      "T3": 1.2,
+      "TT4 measured": 1,
+      "TT4": 100,
+      "T4U measured": 1,
+      "T4U": 1.1,
+      "FTI measured": 1,
+      "FTI": 100
+    };
+
+    Object.keys(demo).forEach((k) => {
+      const el = getInputForFeature(k);
+      if (!el) return;
+      el.value = String(demo[k]);
+    });
+  });
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideAlert();
+
+    if (!form.checkValidity()) {
+      form.classList.add("was-validated");
+      showAlert("Please fill all required fields correctly.", "warning");
+      return;
+    }
+
+    const payload = {};
+    try {
+      FEATURE_NAMES.forEach((feat) => {
+        const el = getInputForFeature(feat);
+        if (!el) throw new Error("Missing input element for: " + feat);
+
+        const rawVal = el.value;
+        if (rawVal === "" || rawVal === null || rawVal === undefined) {
+          throw new Error("Missing value for: " + feat);
+        }
+
+        const num = Number(rawVal);
+        if (Number.isNaN(num)) {
+          throw new Error("Invalid number for: " + feat);
+        }
+        payload[feat] = num;
+      });
+    } catch (err) {
+      showAlert(err.message || "Invalid inputs.", "danger");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const res = await fetch("{{ url_for('api_explain') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const msg = data?.error || "Prediction failed.";
+        const details = data?.details ? `<div class="mt-2 small text-muted">${data.details}</div>` : "";
+        showAlert(msg + details, "danger");
+        setLoading(false);
+        return;
+      }
+
+      sessionStorage.setItem("thyroidResult", JSON.stringify(data));
+      window.location.href = "{{ url_for('result_page') }}";
+
+    } catch (err) {
+      showAlert("Network/server error. Please try again.<div class='mt-2 small text-muted'>" + err + "</div>", "danger");
+      setLoading(false);
+    }
+  });
+})();
+</script>
+{% endblock %}

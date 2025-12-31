@@ -1,0 +1,9 @@
+{
+  "classes": [
+    "Hyperthyroidism",
+    "Hypothyroidism",
+    "Normal",
+    "Subclinical Hyperthyroidism",
+    "Subclinical Hypothyroidism"
+  ]
+}

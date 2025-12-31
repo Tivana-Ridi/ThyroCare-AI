@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}My History | ThyroCare-AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-10">
+    <div class="card shadow-lg rounded-4 border-0 p-4 mt-3">
+      <h2 class="mb-3">My Past Predictions</h2>
+      {% if history|length == 0 %}
+        <p>You don’t have any saved predictions yet.</p>
+      {% else %}
+
+        <div class="mb-4">
+          <h4 class="mb-2">Probability Trend</h4>
+          <p class="small-text text-muted mb-2">
+            This graph shows the model's confidence for each past prediction.
+            The improvement score treats <b>Normal</b> as higher-is-better and any other status as lower-is-better.
+          </p>
+          <div class="border rounded-4 p-3 bg-light">
+            <canvas id="historyChart" height="220" aria-label="Prediction probability trend chart" role="img"></canvas>
+            <div class="d-flex flex-wrap gap-3 small-text text-muted mt-2">
+              <span>Blue: Predicted class probability</span>
+              <span>Green: Improvement score</span>
+              <span id="trendSummary" class="fw-semibold text-dark"></span>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Date & Time (UTC)</th>
+                <th>Predicted Status</th>
+                <th>Probability</th>
+                <th>Model</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for rec in history %}
+              <tr>
+                <td>{{ rec.timestamp }}</td>
+                <td>{{ rec.prediction_label }}</td>
+                <td>{{ "%.1f"|format(rec.probability * 100) }}%</td>
+                <td>{{ rec.model_version }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% if history|length > 0 %}
+<script>
+  (function () {
+    const historyData = {{ history|tojson }};
+    const canvas = document.getElementById("historyChart");
+    const summary = document.getElementById("trendSummary");
+
+    if (!canvas || historyData.length === 0) return;
+
+    // Use chronological order for plotting
+    const data = historyData.slice().reverse();
+
+    const probs = data.map(r => Number(r.probability) || 0);
+    const scores = data.map(r => {
+      const label = String(r.prediction_label || "").toLowerCase();
+      const p = Number(r.probability) || 0;
+      return label === "normal" ? p : 1 - p;
+    });
+
+    function linearSlope(arr) {
+      const n = arr.length;
+      if (n < 2) return 0;
+      let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+      for (let i = 0; i < n; i++) {
+        sumX += i;
+        sumY += arr[i];
+        sumXY += i * arr[i];
+        sumXX += i * i;
+      }
+      const denom = (n * sumXX - sumX * sumX);
+      return denom === 0 ? 0 : (n * sumXY - sumX * sumY) / denom;
+    }
+
+    const slope = linearSlope(scores);
+    let trendText = "Trend: Stable";
+    if (slope > 0.01) trendText = "Trend: Improving";
+    if (slope < -0.01) trendText = "Trend: Declining";
+    summary.textContent = trendText;
+
+    const ctx = canvas.getContext("2d");
+    const parent = canvas.parentElement;
+    canvas.width = parent.clientWidth;
+    canvas.height = 220;
+
+    const w = canvas.width;
+    const h = canvas.height;
+    const pad = 30;
+
+    function yPos(v) {
+      const clamped = Math.max(0, Math.min(1, v));
+      return h - pad - clamped * (h - pad * 2);
+    }
+
+    function xPos(i, n) {
+      if (n <= 1) return pad;
+      return pad + (i * (w - pad * 2)) / (n - 1);
+    }
+
+    function drawLine(values, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      values.forEach((v, i) => {
+        const x = xPos(i, values.length);
+        const y = yPos(v);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+
+    // Background grid
+    ctx.strokeStyle = "#e2e6ea";
+    ctx.lineWidth = 1;
+    [0, 0.5, 1].forEach(val => {
+      const y = yPos(val);
+      ctx.beginPath();
+      ctx.moveTo(pad, y);
+      ctx.lineTo(w - pad, y);
+      ctx.stroke();
+    });
+
+    // Axis labels
+    ctx.fillStyle = "#6c757d";
+    ctx.font = "12px sans-serif";
+    ctx.fillText("0%", 4, yPos(0) + 4);
+    ctx.fillText("50%", 0, yPos(0.5) + 4);
+    ctx.fillText("100%", 0, yPos(1) + 4);
+
+    drawLine(probs, "#0d6efd");   // blue
+    drawLine(scores, "#198754");  // green
+  })();
+</script>
+{% endif %}
+{% endblock %}
+

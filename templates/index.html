@@ -1,0 +1,263 @@
+{% extends "base.html" %}
+
+{% block title %}Home | ThyroCare-AI{% endblock %}
+
+{% block content %}
+<div class="container py-3">
+
+  <!-- HERO -->
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow-lg rounded-4 border-0 p-4 mt-2">
+        <div class="row align-items-center g-4">
+          <div class="col-md-7">
+            <h1 class="display-6 mb-2">ThyroCare-AI</h1>
+            <p class="lead mb-3">
+              Check your thyroid status from lab values — and see a clear explanation of <em>why</em> the model predicted it.
+            </p>
+
+            <div class="d-flex flex-wrap gap-2">
+              {% if not session.get('user_id') %}
+                <a href="{{ url_for('signup') }}" class="btn btn-primary btn-lg big-button">
+                  Create Account
+                </a>
+                <a href="{{ url_for('login') }}" class="btn btn-outline-secondary btn-lg big-button">
+                  Log In
+                </a>
+              {% else %}
+                <a href="{{ url_for('predict_page') }}" class="btn btn-primary btn-lg big-button">
+                  Start My Thyroid Checkup
+                </a>
+              {% endif %}
+              <a href="#how-it-works" class="btn btn-light btn-lg big-button border">
+                How it works
+              </a>
+            </div>
+
+            <div class="mt-3 small text-muted">
+              Works best with recent lab results (TSH, T3, TT4, T4U, FTI). Your history stays available in your account.
+            </div>
+          </div>
+
+          <div class="col-md-5">
+            <!-- Quick stats / badges -->
+            <div class="p-3 rounded-4 bg-light border">
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="fw-semibold">What you’ll get</span>
+                <span class="badge bg-primary rounded-pill">Personalized Explainable AI</span>
+              </div>
+              <ul class="mb-0 small">
+                <li class="mb-1">Instant thyroid status prediction</li>
+                <li class="mb-1">Top factors influencing your result</li>
+                <li class="mb-1">Personalized, easy-to-read summary</li>
+                <li>Saved history for tracking over time</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 FEATURE CARDS -->
+  <div class="row justify-content-center mt-4">
+    <div class="col-lg-10">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm border-0 rounded-4">
+            <div class="card-body">
+              <h5 class="mb-2">Fast Prediction</h5>
+              <p class="mb-0 text-muted">
+                Enter your values and get results in seconds with consistent preprocessing and validated inputs.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm border-0 rounded-4">
+            <div class="card-body">
+              <h5 class="mb-2">Clear Explanation</h5>
+              <p class="mb-0 text-muted">
+                Understand what influenced your prediction — top features are shown in a patient-friendly way.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="card h-100 shadow-sm border-0 rounded-4">
+            <div class="card-body">
+              <h5 class="mb-2">Track Your History</h5>
+              <p class="mb-0 text-muted">
+                Save your results to view trends later. Helpful for monitoring and follow-up conversations with doctors.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS (INTERACTIVE STEPS) -->
+  <div id="how-it-works" class="row justify-content-center mt-4">
+    <div class="col-lg-10">
+      <div class="card border-0 rounded-4 shadow-sm">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <h4 class="mb-0">How it works</h4>
+            <a href="#faq" class="small text-decoration-none">Jump to FAQ ↓</a>
+          </div>
+          <hr>
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="p-3 rounded-4 border bg-light h-100">
+                <div class="fw-semibold mb-1">1) Enter lab values</div>
+                <div class="small text-muted">
+                  Provide TSH, T3, TT4, T4U, FTI . Missing fields are handled safely.
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 rounded-4 border bg-light h-100">
+                <div class="fw-semibold mb-1">2) Get prediction</div>
+                <div class="small text-muted">
+                  The model predicts your thyroid status based on patterns learned from training data.
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 rounded-4 border bg-light h-100">
+                <div class="fw-semibold mb-1">3) See explanation</div>
+                <div class="small text-muted">
+                  You’ll see the top factors that pushed the model toward your predicted class.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-warning mt-4 mb-0 rounded-4">
+            <strong>Medical note:</strong> This tool supports understanding and monitoring.
+            It does not replace clinical diagnosis. Always consult a qualified doctor for medical decisions.
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WHAT YOU NEED + CTA -->
+  <div class="row justify-content-center mt-4">
+    <div class="col-lg-10">
+      <div class="card border-0 rounded-4 shadow-sm">
+        <div class="card-body p-4">
+          <div class="row align-items-center g-4">
+            <div class="col-md-7">
+              <h4 class="mb-2">What you need</h4>
+              <p class="text-muted mb-3">
+                Use the most recent thyroid test values you have. If a value is missing, the system can still estimate —
+                but accuracy is best with complete labs.
+              </p>
+              <div class="d-flex flex-wrap gap-2">
+                <span class="badge bg-light text-dark border">TSH</span>
+                <span class="badge bg-light text-dark border">T3</span>
+                <span class="badge bg-light text-dark border">TT4</span>
+                <span class="badge bg-light text-dark border">T4U</span>
+                <span class="badge bg-light text-dark border">FTI</span>
+              </div>
+            </div>
+
+            <div class="col-md-5">
+              <div class="p-3 rounded-4 bg-light border">
+                <div class="fw-semibold mb-2">Ready to check?</div>
+                {% if not session.get('user_id') %}
+                  <a href="{{ url_for('signup') }}" class="btn btn-primary w-100 big-button mb-2">Create Account</a>
+                  <a href="{{ url_for('login') }}" class="btn btn-outline-secondary w-100 big-button">Log In</a>
+                {% else %}
+                  <a href="{{ url_for('predict_page') }}" class="btn btn-primary w-100 big-button">Start My Thyroid Checkup</a>
+                {% endif %}
+                <div class="small text-muted mt-2">
+                  Your result history will be saved to your account.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ (ACCORDION - INTERACTIVE) -->
+  <div id="faq" class="row justify-content-center mt-4 mb-2">
+    <div class="col-lg-10">
+      <div class="card border-0 rounded-4 shadow-sm">
+        <div class="card-body p-4">
+          <h4 class="mb-3">FAQ</h4>
+
+          <div class="accordion" id="faqAccordion">
+
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="q1">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#a1">
+                  Is this a medical diagnosis?
+                </button>
+              </h2>
+              <div id="a1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-muted">
+                  No. It’s a decision-support tool to help you interpret lab values. Confirm results with a doctor.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="q2">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a2">
+                  What if I don’t have all values?
+                </button>
+              </h2>
+              <div id="a2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-muted">
+                  You can still run a prediction, but accuracy is best when key labs are available.
+                  Missing values should be handled by the system safely (not by entering 0).
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="q3">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a3">
+                  How do explanations work?
+                </button>
+              </h2>
+              <div id="a3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-muted">
+                  Explanations show which features most influenced the model’s decision for your specific input.
+                </div>
+              </div>
+            </div>
+
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="q4">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#a4">
+                  Is my data stored?
+                </button>
+              </h2>
+              <div id="a4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                <div class="accordion-body text-muted">
+                  If you are logged in, your prediction history can be stored so you can track results over time.
+                  Avoid entering personally sensitive notes.
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

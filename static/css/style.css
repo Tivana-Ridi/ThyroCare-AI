@@ -1,0 +1,326 @@
+/* ==============================
+   ThyroCare-AI — Modern UI CSS
+   Interactive • Clean • Premium
+   ============================== */
+
+
+:root {
+  /* Backgrounds */
+  --bg: #f7fcf5;
+  --surface: #ffffff;
+
+  /* Text */
+  --text: #063b1f;
+  --muted: #4f6f5a;
+
+  /* Green scale */
+  --green-50:  #f7fcf5;
+  --green-100: #e8f6e2;
+  --green-200: #ccecc3;
+  --green-300: #a9df9d;
+  --green-400: #7bc96f;
+  --green-500: #4caf50;   /* PRIMARY */
+  --green-600: #2e8b57;
+  --green-700: #1e6f43;
+  --green-800: #0b4f2a;
+  --green-900: #063b1f;
+
+  /* Semantic roles */
+  --primary: var(--green-500);
+  --primary-hover: var(--green-600);
+  --success: var(--green-700);
+  --confidence: var(--green-800);
+
+  /* Alerts */
+  --warn: #f59e0b;
+  --danger: #dc2626;
+
+  /* UI */
+  --border: rgba(11, 79, 42, 0.15);
+  --shadow: 0 12px 30px rgba(11, 79, 42, 0.15);
+  --shadow-soft: 0 6px 18px rgba(11, 79, 42, 0.10);
+  --ring: 0 0 0 4px rgba(76, 175, 80, 0.25);
+
+  --radius-xl: 22px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+
+  --transition: 180ms cubic-bezier(.2,.8,.2,1);
+}
+
+
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Nunito', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background:
+    radial-gradient(1200px 500px at 10% 0%, rgba(14,165,233,.14), transparent 60%),
+    radial-gradient(900px 500px at 95% 10%, rgba(34,197,94,.10), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+/* Subtle scrollbar polish */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(100,116,139,0.25);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,0.35); }
+
+/* ==============================
+   Navbar
+   ============================== */
+.navbar {
+  background: rgba(255,255,255,0.72) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar-brand {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--text) !important;
+}
+
+.nav-link {
+  color: rgba(15,23,42,0.75) !important;
+  font-weight: 700;
+  transition: var(--transition);
+}
+
+.nav-link:hover {
+  color: var(--text) !important;
+  transform: translateY(-1px);
+}
+
+.navbar .btn,
+.navbar .badge {
+  border-radius: 999px;
+}
+
+/* ==============================
+   Cards
+   ============================== */
+.card {
+  border-radius: var(--radius-xl);
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  transition: var(--transition);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.explanation-card {
+  background: linear-gradient(
+    180deg,
+    #ffffff,
+    var(--green-50)
+  );
+  border-left: 6px solid var(--green-400);
+}
+
+/* ==============================
+   Typography helpers
+   ============================== */
+.big-label {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: rgba(15,23,42,0.9);
+}
+
+.small-text {
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+
+h1,h2,h3,h4,h5 {
+  letter-spacing: -0.2px;
+}
+h2 {
+  font-weight: 900;
+}
+
+/* ==============================
+   Buttons
+   ============================== */
+.big-button {
+  padding: 0.78rem 1.25rem;
+  font-size: 1.02rem;
+  border-radius: 999px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  transition: var(--transition);
+}
+
+.btn {
+  border-radius: 999px !important;
+  font-weight: 900;
+  transition: var(--transition);
+}
+.btn-primary {
+  background: linear-gradient(
+    135deg,
+    var(--green-500),
+    var(--green-600)
+  ) !important;
+  border: none !important;
+  box-shadow: 0 10px 22px rgba(76, 175, 80, 0.35);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(
+    135deg,
+    var(--green-600),
+    var(--green-700)
+  ) !important;
+  box-shadow: 0 14px 30px rgba(46, 139, 87, 0.45);
+}
+
+
+.btn-outline-secondary,
+.btn-outline-primary {
+  border-width: 2px !important;
+}
+
+.btn-outline-secondary:hover,
+.btn-outline-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn:active {
+  transform: translateY(0px) scale(0.99);
+}
+
+/* ==============================
+   Inputs
+   ============================== */
+.form-label {
+  font-weight: 900;
+  color: rgba(15,23,42,0.88);
+}
+
+.form-control,
+.form-select {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.92);
+  padding: 0.75rem 0.9rem;
+  transition: var(--transition);
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: rgba(14,165,233,0.45);
+  box-shadow: var(--ring);
+  outline: none;
+  background: #fff;
+}
+
+.form-control::placeholder {
+  color: rgba(100,116,139,0.65);
+}
+
+.invalid-feedback {
+  font-weight: 700;
+}
+
+/* Make required fields feel interactive */
+.form-control:hover,
+.form-select:hover {
+  border-color: rgba(14,165,233,0.35);
+}
+
+/* ==============================
+   Alerts
+   ============================== */
+.alert {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.alert-warning {
+  background: rgba(245,158,11,0.10);
+  border-color: rgba(245,158,11,0.30);
+}
+
+.alert-danger {
+  background: rgba(239,68,68,0.08);
+  border-color: rgba(239,68,68,0.30);
+}
+
+.alert-success {
+  background: rgba(34,197,94,0.10);
+  border-color: rgba(34,197,94,0.30);
+}
+
+/* ==============================
+   Tables
+   ============================== */
+.table {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: #fff;
+}
+
+.table thead th {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(15,23,42,0.75);
+  background: rgba(14,165,233,0.08);
+  border-bottom: 1px solid var(--border) !important;
+}
+
+.table tbody td {
+  font-size: 0.92rem;
+  color: rgba(15,23,42,0.86);
+  border-top: 1px solid rgba(15,23,42,0.06);
+}
+
+.table tbody tr:hover {
+  background: rgba(14,165,233,0.04);
+}
+
+/* ==============================
+   Badges / pills
+   ============================== */
+.badge {
+  font-weight: 900;
+  border-radius: 999px;
+  padding: 0.55rem 0.9rem;
+}
+
+/* ==============================
+   Small UI animations (optional)
+   ============================== */
+@keyframes pop {
+  0% { transform: scale(0.98); opacity: 0.0; }
+  100% { transform: scale(1); opacity: 1.0; }
+}
+
+.card, .alert, .table {
+  animation: pop 220ms ease-out;
+}
+
+/* ==============================
+   Responsive polish
+   ============================== */
+@media (max-width: 576px) {
+  .card { border-radius: 18px; }
+  .big-button { width: 100%; }
+  .navbar-brand { font-size: 1.2rem; }
+}

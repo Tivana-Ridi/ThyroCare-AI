@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Result | ThyroCare-AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-lg rounded-4 border-0 p-4 mt-3">
+      <h2 class="mb-3 text-center">Your Thyroid Status</h2>
+
+      <div id="result-summary" class="text-center mb-4"></div>
+
+      <hr>
+
+      <h4 class="mb-3">Why did the model say this?</h4>
+      <p class="small-text mb-2">
+        These are the main factors from your data that influenced this predicted class.
+      </p>
+      <div id="explanation-list"></div>
+
+      <hr>
+
+      <h4 class="mb-3">SHAP Waterfall (Visual Explanation)</h4>
+      <p class="small-text mb-2 text-muted">
+        This chart shows how each feature pushed the fused model (LR + RF) toward the predicted class.
+      </p>
+
+      <div id="shap-box" class="text-center mb-4">
+        <div id="shap-loading" class="small-text text-muted">Loading SHAP visualization...</div>
+        <img id="shap-img" class="img-fluid rounded-4 shadow-sm d-none" alt="SHAP Waterfall">
+        <div id="shap-error" class="small-text text-danger mt-2"></div>
+      </div>
+
+      <hr>
+
+      <h4 class="mb-3">Possible Symptoms</h4>
+      <div id="symptoms-list" class="text-center mb-4"></div>
+
+      <div class="alert alert-warning mt-4 small-text">
+        This tool is for educational purposes only and does not replace professional medical advice.
+        Always consult a qualified doctor for diagnosis and treatment decisions.
+      </div>
+
+      <div class="d-flex justify-content-between mt-3">
+        <a href="{{ url_for('predict_page') }}" class="btn btn-outline-secondary big-button">Try Again</a>
+        <a href="{{ url_for('history_page') }}" class="btn btn-primary big-button">View My History</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Symptoms based on thyroid status
+  const SYMPTOMS = {
+    "Hypothyroidism": [
+      "Fatigue / low energy", "Weight gain", "Feeling cold",
+      "Dry skin / hair loss", "Constipation", "Low mood"
+    ],
+    "Hyperthyroidism": [
+      "Weight loss", "Fast heartbeat / palpitations", "Anxiety / irritability",
+      "Heat intolerance / sweating", "Tremor", "Sleep problems"
+    ],
+    "Subclinical Hypothyroidism": [
+      "Often mild or no symptoms",
+      "Possible fatigue, weight gain, dry skin, constipation"
+    ],
+    "Subclinical Hyperthyroidism": [
+      "Often mild or no symptoms",
+      "Possible palpitations, anxiety, heat intolerance"
+    ],
+    "Normal": [
+      "Model output suggests a normal thyroid pattern",
+      "If symptoms exist, confirm with labs/doctor"
+    ]
+  };
+
+  async function loadShapWaterfall(resultData) {
+    const loading = document.getElementById("shap-loading");
+    const img = document.getElementById("shap-img");
+    const err = document.getElementById("shap-error");
+
+    // Reset UI
+    loading.classList.remove("d-none");
+    img.classList.add("d-none");
+    err.textContent = "";
+
+    const inputs = resultData.inputs;
+    if (!inputs) {
+      loading.classList.add("d-none");
+      err.textContent = "SHAP visualization needs input values (inputs missing from API response).";
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/shap-waterfall", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          inputs: inputs,
+          class_index: resultData.prediction_index
+        })
+      });
+
+      const out = await res.json();
+      if (!res.ok) throw new Error(out.error || "SHAP request failed.");
+
+      img.src = out.image;
+      img.classList.remove("d-none");
+    } catch (e) {
+      err.textContent = "SHAP visualization is not available right now. The text explanation above is shown instead.";
+    } finally {
+      loading.classList.add("d-none");
+    }
+  }
+
+  function renderResult() {
+    const raw = sessionStorage.getItem("thyroidResult");
+    const summary = document.getElementById("result-summary");
+    const explContainer = document.getElementById("explanation-list");
+    const symptomsContainer = document.getElementById("symptoms-list");
+
+    if (!raw) {
+      summary.innerHTML = "<p class='text-danger'>No result available. Please run a new checkup.</p>";
+      return;
+    }
+
+    const data = JSON.parse(raw);
+    const label = data.prediction_label || "Unknown";
+    const prob = data.prediction_probability || 0;
+    const percent = (prob * 100).toFixed(1);
+
+    // Show prediction summary
+    summary.innerHTML = `
+      <p class="lead mb-1"><strong>Predicted status:</strong> ${label}</p>
+      <p class="fs-5 mb-0">Confidence: <strong>${percent}%</strong></p>
+      <p class="small-text text-muted mb-0">Model: ${data.model_version || "N/A"}</p>
+    `;
+
+    // Show explanation (top 6)
+    explContainer.innerHTML = "";
+    const explanation = data.explanation || [];
+    const top = explanation.slice(0, 6);
+
+    if (top.length === 0) {
+      explContainer.innerHTML = "<p class='small-text'>No explanation available.</p>";
+    } else {
+      top.forEach(feat => {
+        // For your current lightweight score, bigger means more "important"
+        const colorClass = "text-primary";
+        const meanText = (feat.population_mean !== null && feat.population_mean !== undefined)
+          ? `Typical value: <strong>${Number(feat.population_mean).toFixed(2)}</strong>.`
+          : "";
+
+        const valueNum = Number(feat.value);
+        const card = document.createElement("div");
+        card.className = "card border-0 explanation-card mb-2";
+        card.innerHTML = `
+          <div class="card-body p-3">
+            <p class="mb-1"><strong>${feat.feature}</strong></p>
+            <p class="mb-1 small-text">
+              Your value: <strong>${isFinite(valueNum) ? valueNum.toFixed(2) : feat.value}</strong>. ${meanText}
+            </p>
+            <p class="mb-0 small-text ${colorClass}">
+              Importance score: <strong>${Number(feat.contribution).toFixed(3)}</strong>
+            </p>
+          </div>
+        `;
+        explContainer.appendChild(card);
+      });
+    }
+
+    // Symptoms
+    symptomsContainer.innerHTML = "";
+    const symptoms = SYMPTOMS[label] || [];
+    if (symptoms.length === 0) {
+      symptomsContainer.innerHTML = "<p class='small-text'>No symptoms available for this status.</p>";
+    } else {
+      symptoms.forEach(symptom => {
+        const symptomItem = document.createElement("p");
+        symptomItem.className = "small-text";
+        symptomItem.textContent = `• ${symptom}`;
+        symptomsContainer.appendChild(symptomItem);
+      });
+    }
+
+    // SHAP Waterfall
+    loadShapWaterfall(data);
+  }
+
+  document.addEventListener("DOMContentLoaded", renderResult);
+</script>
+{% endblock %}

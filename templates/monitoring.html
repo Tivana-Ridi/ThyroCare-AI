@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Monitoring | ThyroCare-AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-lg rounded-4 border-0 p-4 mt-3">
+      <h2 class="mb-3">Model Monitoring Summary</h2>
+      <p class="small-text mb-3">
+        Basic overview of how many predictions the system has made and the average predicted probability.
+      </p>
+
+      <div id="monitor-summary"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function loadMonitorSummary() {
+    const container = document.getElementById("monitor-summary");
+    try {
+      const res = await fetch("/monitor-summary");
+      const data = await res.json();
+      container.innerHTML = `
+        <p><strong>Total predictions:</strong> ${data.total_predictions}</p>
+        <p><strong>Average predicted probability:</strong> ${
+          data.average_probability !== null ? (data.average_probability * 100).toFixed(1) + "%" : "N/A"
+        }</p>
+      `;
+    } catch (err) {
+      container.innerHTML = "<p class='text-danger small-text'>Failed to load monitoring data.</p>";
+    }
+  }
+  document.addEventListener("DOMContentLoaded", loadMonitorSummary);
+</script>
+{% endblock %}

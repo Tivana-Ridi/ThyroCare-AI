@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up | ThyroCare-AI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card shadow-lg rounded-4 border-0 p-4 mt-4">
+      <h2 class="mb-3 text-center">Create Your Account</h2>
+      <form method="POST">
+        <div class="mb-3">
+          <label class="form-label big-label">Username</label>
+          <input type="text" name="username" class="form-control form-control-lg" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label big-label">Email</label>
+          <input type="email" name="email" class="form-control form-control-lg" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label big-label">Password</label>
+          <input type="password" name="password" class="form-control form-control-lg" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label big-label">Confirm Password</label>
+          <input type="password" name="confirm" class="form-control form-control-lg" required>
+        </div>
+
+        <div class="d-grid mt-3">
+          <button type="submit" class="btn btn-primary btn-lg big-button">Sign Up</button>
+        </div>
+
+        <p class="mt-3 text-center small-text">
+          Already have an account?
+          <a href="{{ url_for('login') }}">Log in here</a>.
+        </p>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
